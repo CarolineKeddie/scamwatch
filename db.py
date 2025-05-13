@@ -25,3 +25,15 @@ def submit_user_report(domain, content):
     )
     conn.commit()
     conn.close()
+def insert_scraped_report(domain, source, content, confidence):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO scam_reports (id, merchant_domain, source, content, confidence, report_date)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """,
+        (str(uuid.uuid4()), domain, source, content, confidence, datetime.utcnow())
+    )
+    conn.commit()
+    conn.close()
