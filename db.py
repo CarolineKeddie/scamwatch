@@ -11,17 +11,21 @@ def get_conn():
     """Gets the database connection string from Streamlit secrets or env var."""
     DATABASE_URL = None
 
+    # --- START: Modified section to look for "DATABASE_URL" key ---
     # Try to get the connection string from Streamlit secrets first (for Streamlit Cloud)
-    if "connections" in st.secrets and "supabase" in st.secrets["connections"] and "url" in st.secrets["connections"]["supabase"]:
-        DATABASE_URL = st.secrets["connections"]["supabase"]["url"]
+    # We are looking for the key "DATABASE_URL" inside the [connections.supabase] section
+    if "connections" in st.secrets and "supabase" in st.secrets["connections"] and "DATABASE_URL" in st.secrets["connections"]["supabase"]:
+        DATABASE_URL = st.secrets["connections"]["supabase"]["DATABASE_URL"] # <-- Now correctly looking for 'DATABASE_URL' key
     else:
         # Fallback to environment variable (e.g., for local development or GitHub Actions)
         DATABASE_URL = os.getenv("DATABASE_URL")
+    # --- END: Modified section ---
+
 
     # Check if we successfully got the URL
     if not DATABASE_URL:
          # Raise an error if no URL was found in either place
-         raise ValueError("Database connection URL not found. Please set it in Streamlit secrets or as an environment variable.")
+         raise ValueError("Database connection URL not found. Please set it in Streamlit secrets (under [connections.supabase] with key DATABASE_URL) or as an environment variable.")
 
     # Optional: Add some logging for debugging (masking password)
     print(f"Attempting to connect to database...")
