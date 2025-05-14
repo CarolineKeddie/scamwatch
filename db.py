@@ -37,3 +37,33 @@ def insert_scraped_report(domain, source, content, confidence):
     )
     conn.commit()
     conn.close()
+
+def get_all_domains():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT DISTINCT merchant_domain FROM scam_reports")
+    rows = cur.fetchall()
+    conn.close()
+    return [r[0] for r in rows]
+
+def get_flagged_domains(threshold=60):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT domain, risk_score, label FROM merchants WHERE risk_score >= %s ORDER BY risk_score DESC", (threshold,))
+    rows = cur.fetchall()
+    conn.close()
+    return [{"domain": r[0], "risk_score": r[1], "label": r[2]} for r in rows]
+
+def get_reports_over_time():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DATE(report_date) as report_day, COUNT(*) 
+        FROM scam_reports 
+        GROUP BY report_day 
+        ORDER BY report_day
+    """)
+    rows = cur.fetchall()
+    conn.close()
+    return [{"report_date": r[0], "count": r[1]} for r in rows]
+
