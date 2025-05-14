@@ -2,11 +2,34 @@ import os
 import psycopg2
 import uuid
 from datetime import datetime
+import streamlit as st # <-- Import streamlit
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+# We are removing the top-level os.getenv call here
+# DATABASE_URL = os.getenv("DATABASE_URL") # <-- REMOVE OR COMMENT THIS LINE
 
 def get_conn():
+    """Gets the database connection string from Streamlit secrets or env var."""
+    DATABASE_URL = None
+
+    # Try to get the connection string from Streamlit secrets first (for Streamlit Cloud)
+    if "connections" in st.secrets and "supabase" in st.secrets["connections"] and "url" in st.secrets["connections"]["supabase"]:
+        DATABASE_URL = st.secrets["connections"]["supabase"]["url"]
+    else:
+        # Fallback to environment variable (e.g., for local development or GitHub Actions)
+        DATABASE_URL = os.getenv("DATABASE_URL")
+
+    # Check if we successfully got the URL
+    if not DATABASE_URL:
+         # Raise an error if no URL was found in either place
+         raise ValueError("Database connection URL not found. Please set it in Streamlit secrets or as an environment variable.")
+
+    # Optional: Add some logging for debugging (masking password)
+    print(f"Attempting to connect to database...")
+    # print(f"Connecting using URL (sensitive parts masked): {DATABASE_URL.split('@')[-1]}") # Use with caution
+
     return psycopg2.connect(DATABASE_URL)
+
+# --- Your existing database functions remain the same ---
 
 def get_reports_by_domain(domain):
     conn = get_conn()
@@ -25,6 +48,7 @@ def submit_user_report(domain, content):
     )
     conn.commit()
     conn.close()
+
 def insert_scraped_report(domain, source, content, confidence):
     conn = get_conn()
     cur = conn.cursor()
@@ -58,12 +82,11 @@ def get_reports_over_time():
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
-        SELECT DATE(report_date) as report_day, COUNT(*) 
-        FROM scam_reports 
-        GROUP BY report_day 
+        SELECT DATE(report_date) as report_day, COUNT(*)
+        FROM scam_reports
+        GROUP BY report_day
         ORDER BY report_day
     """)
     rows = cur.fetchall()
     conn.close()
     return [{"report_date": r[0], "count": r[1]} for r in rows]
-
