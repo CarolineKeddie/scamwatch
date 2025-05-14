@@ -3,15 +3,14 @@ import os
 import altair as alt
 from risk_engine import score_domain
 from db import get_reports_by_domain, submit_user_report, get_all_domains, get_flagged_domains, get_reports_over_time
-# TEMP DEBUG LINE – check what DB URL Streamlit is seeing
-st.write("🔍 Current DB URL:", os.getenv("DATABASE_URL"))
 
 from datetime import datetime
 
 st.set_page_config(page_title="ScamWatch", page_icon="🛡️")
 st.title("🛡️ ScamWatch: Real-Time Scam Detection")
 
-
+# TEMP DEBUG LINE – check what DB URL Streamlit is seeing
+st.write("🔍 Current DB URL:", os.getenv("DATABASE_URL"))
 def clean_domain(raw):
     return raw.strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
 
